@@ -1,0 +1,29 @@
+version: "3.8"
+services:
+  postgres:
+    image: postgres:14
+    restart: always
+    environment:
+      POSTGRES_USER: ekonsilio
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: ekonsilio_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  backend:
+    build: ../apps/backend
+    ports:
+      - "3000:3000"
+    environment:
+      DATABASE_URL: postgres://ekonsilio:password@postgres:5432/ekonsilio_db
+      JWT_SECRET: your_jwt_secret
+      GOOGLE_CLIENT_ID: your_google_client_id
+      GOOGLE_CLIENT_SECRET: your_google_client_secret
+      DEFAULT_TENANT_ID: your_default_tenant_id
+    depends_on:
+      - postgres
+
+volumes:
+  postgres_data:
