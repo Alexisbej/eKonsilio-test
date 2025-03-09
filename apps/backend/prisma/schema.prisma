@@ -17,18 +17,23 @@ enum UserRole {
 }
 
 model User {
-  id            String         @id @default(uuid())
-  email         String         @unique
-  name          String?
-  googleId      String?        @unique
-  role          UserRole       @default(VISITOR)
-  tenantId      String
-  tenant        Tenant         @relation(fields: [tenantId], references: [id])
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
-  conversations Conversation[] @relation("UserConversations")
-  messages      Message[]
-
+  id                String         @id @default(uuid())
+  email             String?        @unique
+  name              String?
+  googleId          String?        @unique
+  role              UserRole       @default(VISITOR)
+  tenantId          String
+  tenant            Tenant         @relation(fields: [tenantId], references: [id])
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+  conversations     Conversation[] @relation("UserConversations")
+  messages          Message[]
+  assignedConversations Conversation[] @relation("AgentConversations")
+  temporaryToken    String?        @unique
+  isAvailable       Boolean        @default(true)
+  skills            String[]       @default([])
+  maxWorkload       Int            @default(5)
+  
   @@index([tenantId])
 }
 
@@ -53,6 +58,8 @@ model Conversation {
   status      ConversationStatus @default(PENDING)
   userId      String
   user        User               @relation("UserConversations", fields: [userId], references: [id])
+  agentId     String?
+  agent       User?              @relation("AgentConversations", fields: [agentId], references: [id])
   tenantId    String
   tenant      Tenant             @relation(fields: [tenantId], references: [id])
   messages    Message[]
@@ -61,6 +68,7 @@ model Conversation {
   updatedAt   DateTime           @updatedAt
 
   @@index([userId])
+  @@index([agentId])
   @@index([tenantId])
 }
 
