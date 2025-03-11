@@ -124,3 +124,4 @@ pnpm build && pnpm start:prod
 - **Agent Profile**: Allow agents to customize profiles to add skills
 - **Visitor Widget**: Implement real agent data
 - **Real time communication**: Add connection status and typing indicators
+- **CI**: Fix the prisma client generation issue that makes the UT fails
