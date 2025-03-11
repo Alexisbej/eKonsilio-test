@@ -262,6 +262,10 @@ export const useConversations = () => {
     return subscribeToNewConversations((conversationId: string) => {
       queryClient.invalidateQueries({ queryKey: conversationKeys.lists() });
 
+      toast.success("New conversation assigned", {
+        description: "You have been assigned to a new conversation",
+      });
+
       if (selectedConversationId !== conversationId) {
         queryClient.prefetchQuery({
           queryKey: conversationKeys.detail(conversationId),

@@ -1,5 +1,6 @@
 "use client";
 
+import { ConversationNotificationHandler } from "@/components/ConversationNotificationHandler";
 import { ConversationEmptyState } from "@/components/conversations/ConversationEmptyState";
 import { ConversationHeader } from "@/components/conversations/ConversationHeader";
 import { ConversationsList } from "@/components/conversations/ConversationsList";
@@ -155,6 +156,7 @@ function ConversationsPageContent() {
       </div>
 
       <OfflineIndicator />
+      <ConversationNotificationHandler />
     </div>
   );
 }
