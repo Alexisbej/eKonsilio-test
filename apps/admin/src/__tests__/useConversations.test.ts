@@ -7,13 +7,11 @@ import "@testing-library/jest-dom";
 import { act, renderHook } from "@testing-library/react";
 import { toast } from "sonner";
 
-// Mock dependencies
 jest.mock("@ekonsilio/chat-socket");
 jest.mock("@/hooks/useAuth");
 jest.mock("@tanstack/react-query");
 jest.mock("sonner");
 
-// Mock data
 const mockUser: User = { id: "user1", role: UserRole.AGENT };
 const mockConversation: Conversation = {
   id: "conv1",
@@ -34,7 +32,6 @@ const mockMessage: Message = {
   user: { id: "user1", role: UserRole.AGENT },
 };
 
-// Mock implementations
 const mockSubscribeToConversation = jest.fn();
 const mockSubscribeToNewConversations = jest.fn();
 const mockSendMessage = jest.fn().mockReturnValue(true);
@@ -45,10 +42,8 @@ describe("useConversations", () => {
   beforeEach(() => {
     jest.clearAllMocks();
 
-    // Mock useAuth
     (useAuth as jest.Mock).mockReturnValue({ user: mockUser });
 
-    // Mock useSocket
     (useSocket as jest.Mock).mockReturnValue({
       subscribeToConversation: mockSubscribeToConversation.mockReturnValue(
         () => {},
@@ -58,7 +53,6 @@ describe("useConversations", () => {
       sendMessage: mockSendMessage,
     });
 
-    // Mock React Query
     const mockQueryClient = {
       invalidateQueries: mockInvalidateQueries,
       setQueryData: mockSetQueryData,
@@ -69,7 +63,6 @@ describe("useConversations", () => {
 
     (useQueryClient as jest.Mock).mockReturnValue(mockQueryClient);
 
-    // Updated useQuery mock to properly handle different query keys
     (useQuery as jest.Mock).mockImplementation((options) => {
       if (
         options.queryKey[0] === "conversations" &&
@@ -94,11 +87,8 @@ describe("useConversations", () => {
       return { data: null, isPending: false, error: null };
     });
 
-    // Updated useMutation mock to properly handle errors
-    // Updated useMutation mock to handle both message sending and conversation resolution
     (useMutation as jest.Mock).mockImplementation(({ onSuccess, onError }) => ({
       mutateAsync: jest.fn().mockImplementation(async (data) => {
-        // Handle resolve conversation case
         if (data?.status === "RESOLVED") {
           if (onSuccess) {
             await onSuccess();
@@ -110,7 +100,6 @@ describe("useConversations", () => {
           return { success: true };
         }
 
-        // Handle send message case
         if (mockSendMessage.mock.results[0]?.value === false) {
           if (onError) {
             await onError(new Error("Failed to send message"));
