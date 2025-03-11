@@ -21,21 +21,6 @@ jobs:
         with:
           node-version: "20"
 
-      - name: Setup Turborepo cache
-        uses: actions/cache@v2
-        with:
-          path: |
-            node_modules/.cache/turbo
-          key: ${{ runner.os }}-turbo-${{ github.sha }}
-          restore-keys: |
-            ${{ runner.os }}-turbo-
-
-      - name: Cache node_modules
-        uses: actions/cache@v2
-        with:
-          path: "**/node_modules"
-          key: ${{ runner.os }}-modules-${{ hashFiles('**/package-lock.json') }}
-
       - name: Install dependencies
         run: npm install
 
