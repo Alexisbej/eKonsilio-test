@@ -1,4 +1,4 @@
-import { ConversationStatus } from '@prisma/client';
+import { ConversationStatus } from '@ekonsilio/types';
 import { z } from 'zod';
 
 export const CreateConversationSchema = z.object({

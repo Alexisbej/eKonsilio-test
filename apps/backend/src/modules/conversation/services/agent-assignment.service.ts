@@ -1,5 +1,5 @@
+import { Conversation, UserRole } from '@ekonsilio/types';
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
-import { Conversation, UserRole } from '@prisma/client';
 import { PrismaService } from '../../../../prisma/prisma.service';
 
 @Injectable()

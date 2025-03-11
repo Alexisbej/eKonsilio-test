@@ -1,3 +1,4 @@
+import { ConversationStatus } from '@ekonsilio/types';
 import {
   BadRequestException,
   Body,
@@ -12,7 +13,6 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
-import { ConversationStatus } from '@prisma/client';
 import { ZodValidationPipe } from '../../../common/pipes/zod-validation.pipe';
 import { Roles } from '../../auth/guards/roles.decorator';
 import { RolesGuard } from '../../auth/guards/roles.guard';

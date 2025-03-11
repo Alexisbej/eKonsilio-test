@@ -1,5 +1,5 @@
+import { ConversationStatus, Prisma } from '@ekonsilio/types';
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
-import { ConversationStatus, Prisma } from '@prisma/client';
 import { PrismaService } from '../../../../prisma/prisma.service';
 import { WebsocketGateway } from '../../websocket/websocket.gateway';
 import { CreateConversationDto } from '../dto/conversation.dto';
