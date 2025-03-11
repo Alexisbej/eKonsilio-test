@@ -26,7 +26,6 @@ export default function DashboardLayout({
   const pathname = usePathname();
 
   useEffect(() => {
-    // Fetch user profile on component mount
     const fetchUser = async () => {
       try {
         setIsLoading(true);
@@ -57,7 +56,6 @@ export default function DashboardLayout({
 
   return (
     <div className="flex h-screen bg-slate-50">
-      {/* Sidebar */}
       <div className="w-16 md:w-64 bg-white border-r flex flex-col">
         <div className="p-4 border-b flex items-center justify-center md:justify-start">
           <span className="hidden md:block font-bold text-xl">eKonsilio</span>
@@ -148,7 +146,6 @@ export default function DashboardLayout({
         </div>
       </div>
 
-      {/* Main content */}
       <div className="flex-1 overflow-auto">{children}</div>
     </div>
   );

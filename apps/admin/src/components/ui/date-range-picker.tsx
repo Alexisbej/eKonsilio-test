@@ -37,9 +37,6 @@ export function DateRangePicker({
     return `${value.from ? format(value.from, "MMM d") : ""} - ${value.to ? format(value.to, "MMM d, yyyy") : ""}`;
   };
 
-  // This is a simplified version - in a real implementation, you would use a proper
-  // date picker library like react-datepicker or @radix-ui/react-popover with a calendar
-
   return (
     <div className={`relative ${className}`}>
       <Button
@@ -54,7 +51,6 @@ export function DateRangePicker({
         <ChevronDown className="h-4 w-4 opacity-50" />
       </Button>
 
-      {/* This is a placeholder for the actual date picker UI */}
       {isOpen && (
         <div className="absolute top-full left-0 z-10 mt-1 w-full rounded-md border bg-background p-4 shadow-md">
           <p className="text-sm text-muted-foreground">

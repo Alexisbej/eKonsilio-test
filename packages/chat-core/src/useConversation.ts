@@ -28,11 +28,9 @@ export const useConversation = ({
   );
   const hasSubscribedRef = useRef(false);
 
-  // Handle incoming messages from socket
   const handleNewMessage = (message: Message) => {
     if (!conversation) return;
 
-    // If the message matches our own (from a temp message), replace it
     if (message.sender === "user" && message.userId === userId) {
       setConversation((prev) => {
         if (!prev) return null;
@@ -49,7 +47,6 @@ export const useConversation = ({
       return;
     }
 
-    // Otherwise, add the new message if it doesn't exist yet
     setConversation((prev) => {
       if (!prev) return null;
       if (prev.messages.some((m) => m.id === message.id)) return prev;
@@ -62,7 +59,6 @@ export const useConversation = ({
     });
   };
 
-  // Subscribe to conversation messages once a conversation exists
   useEffect(() => {
     if (conversation?.id && !hasSubscribedRef.current) {
       hasSubscribedRef.current = true;
@@ -77,7 +73,6 @@ export const useConversation = ({
     }
   }, [conversation?.id, subscribeToConversation]);
 
-  // Handle sending a message (with an optimistic update)
   const handleSendMessage = async (content: string): Promise<boolean> => {
     if (!conversation || !isConnected) return false;
 

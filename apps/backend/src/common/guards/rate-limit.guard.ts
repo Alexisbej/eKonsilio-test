@@ -31,16 +31,13 @@ export class RateLimitGuard implements CanActivate {
     const ip = request.ip;
     const now = Date.now();
 
-    // Get existing timestamps for this IP
     const timestamps = this.requestMap.get(ip) || [];
 
-    // Filter out timestamps outside the current window
     const windowStart = now - this.options.windowMs;
     const recentTimestamps = timestamps.filter(
       (timestamp) => timestamp > windowStart,
     );
 
-    // Check if the request limit has been reached
     if (recentTimestamps.length >= this.options.max) {
       throw new HttpException(
         'Too many requests',
@@ -48,7 +45,6 @@ export class RateLimitGuard implements CanActivate {
       );
     }
 
-    // Add current timestamp and update the map
     recentTimestamps.push(now);
     this.requestMap.set(ip, recentTimestamps);
 

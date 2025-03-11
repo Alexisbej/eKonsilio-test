@@ -1,5 +1,3 @@
-// hooks/useConversations.ts
-// First, let's define some interfaces at the top of the file
 import { conversationKeys } from "@/constants/queryKeys";
 import {
   fetchConversationDetails,
@@ -31,14 +29,12 @@ export const useConversations = () => {
       tokenKey: "auth_token",
     });
 
-  // Query for fetching all conversations
   const conversationsQuery = useQuery({
     queryKey: conversationKeys.lists(),
     queryFn: fetchConversationsList,
     staleTime: 1000 * 60 * 5, // 5 minutes
   });
 
-  // Query for fetching details of the selected conversation
   const selectedConversationQuery = useQuery({
     queryKey: conversationKeys.detail(selectedConversationId || ""),
     queryFn: () => fetchConversationDetails(selectedConversationId || ""),
@@ -46,17 +42,14 @@ export const useConversations = () => {
     staleTime: 1000 * 60, // 1 minute
   });
 
-  // Mutation for resolving a conversation
   const resolveMutation = useMutation({
     mutationFn: resolveConversation,
     onMutate: async (conversationId) => {
-      // Cancel any outgoing refetches
       await queryClient.cancelQueries({
         queryKey: conversationKeys.detail(conversationId),
       });
       await queryClient.cancelQueries({ queryKey: conversationKeys.lists() });
 
-      // Snapshot previous values
       const previousConversation = queryClient.getQueryData(
         conversationKeys.detail(conversationId),
       );
@@ -64,7 +57,6 @@ export const useConversations = () => {
         conversationKeys.lists(),
       );
 
-      // Optimistically update the selected conversation
       if (previousConversation) {
         queryClient.setQueryData(
           conversationKeys.detail(conversationId),
@@ -73,7 +65,6 @@ export const useConversations = () => {
         );
       }
 
-      // Optimistically update the conversations list
       queryClient.setQueryData(
         conversationKeys.lists(),
         (old: Conversation[] | undefined) =>
@@ -85,7 +76,6 @@ export const useConversations = () => {
       return { previousConversation, previousConversations };
     },
     onError: (err, conversationId, context) => {
-      // Revert to previous values if there's an error
       if (context?.previousConversation) {
         queryClient.setQueryData(
           conversationKeys.detail(conversationId),
@@ -109,7 +99,6 @@ export const useConversations = () => {
       });
     },
     onSettled: (conversationId) => {
-      // Invalidate queries to refetch latest data
       queryClient.invalidateQueries({
         queryKey: conversationKeys.detail(conversationId!),
       });
@@ -117,7 +106,6 @@ export const useConversations = () => {
     },
   });
 
-  // Mutation for sending a message
   const sendMessageMutation = useMutation({
     mutationFn: async ({
       conversationId,
@@ -126,27 +114,23 @@ export const useConversations = () => {
       conversationId: string;
       content: string;
     }) => {
-      // For the optimistic update, return the necessary data.
       return {
         conversationId,
         content,
-        agentId: "agent", // Replace with the actual agent id if available.
+        agentId: "agent",
         messageId: `temp-${Date.now()}`,
         timestamp: new Date(),
       };
     },
     onMutate: async ({ conversationId, content }) => {
-      // Cancel any outgoing refetches
       await queryClient.cancelQueries({
         queryKey: conversationKeys.detail(conversationId),
       });
 
-      // Snapshot previous values
       const previousConversation = queryClient.getQueryData(
         conversationKeys.detail(conversationId),
       );
 
-      // Create an optimistic message
       const optimisticMessage = {
         id: `temp-${Date.now()}`,
         content,
@@ -155,7 +139,6 @@ export const useConversations = () => {
         createdAt: new Date().toISOString(),
       };
 
-      // Optimistically update the conversation detail
       queryClient.setQueryData(
         conversationKeys.detail(conversationId),
         (old: Conversation | undefined) =>
@@ -169,7 +152,6 @@ export const useConversations = () => {
             : undefined,
       );
 
-      // Also update the conversation in the list
       queryClient.setQueryData(
         conversationKeys.lists(),
         (old: Conversation[] | undefined) =>
@@ -187,7 +169,6 @@ export const useConversations = () => {
       return { previousConversation };
     },
     onSuccess: async (data) => {
-      // Send the message via WebSocket
       const sent = sendMessage(data.conversationId, data.content, data.agentId);
 
       if (!sent) {
@@ -197,7 +178,6 @@ export const useConversations = () => {
       }
     },
     onError: (err, variables, context) => {
-      // Revert to previous values on error
       if (context?.previousConversation) {
         queryClient.setQueryData(
           conversationKeys.detail(variables.conversationId),
@@ -211,28 +191,21 @@ export const useConversations = () => {
     },
   });
 
-  // Handling WebSocket updates through React Query
   const setupMessageListener = (conversationId: string) => {
     return subscribeToConversation(
       conversationId,
       (message: ProcessedMessage) => {
-        // The issue is here - we're not correctly identifying message senders
-        // We should check if the message is from the agent or user based on role or ID
-
-        // Make sure the message has the correct sender property
         const processedMessage = {
           ...message,
-          // Ensure sender is correctly set to "user" for visitor messages
+
           sender: message.user?.role === "AGENT" ? "agent" : "user",
         };
 
-        // Update conversation detail with the new message
         queryClient.setQueryData(
           conversationKeys.detail(conversationId),
           (old: Conversation | undefined) => {
             if (!old) return old;
 
-            // Check for duplicate messages (including optimistic ones)
             const hasDuplicate = old.messages.some(
               (msg: Message) =>
                 msg.id === processedMessage.id ||
@@ -242,7 +215,6 @@ export const useConversations = () => {
             );
 
             if (hasDuplicate) {
-              // Replace duplicate optimistic message with the real one
               const updatedMessages = old.messages.filter(
                 (msg: Message) =>
                   !(
@@ -269,7 +241,6 @@ export const useConversations = () => {
           },
         );
 
-        // Also update the conversations list
         queryClient.setQueryData(
           conversationKeys.lists(),
           (old: Conversation[] | undefined) =>
@@ -289,10 +260,8 @@ export const useConversations = () => {
 
   const setupNewConversationListener = () => {
     return subscribeToNewConversations((conversationId: string) => {
-      // Invalidate queries to refetch latest data
       queryClient.invalidateQueries({ queryKey: conversationKeys.lists() });
 
-      // Optionally prefetch the new conversation details if it isn't selected already
       if (selectedConversationId !== conversationId) {
         queryClient.prefetchQuery({
           queryKey: conversationKeys.detail(conversationId),
@@ -302,12 +271,10 @@ export const useConversations = () => {
     });
   };
 
-  // Handle selecting a conversation
   const handleSelectConversation = (conversation: Conversation) => {
     setSelectedConversationId(conversation.id);
   };
 
-  // Handle resolving a conversation
   const handleResolveConversation = async () => {
     if (!selectedConversationId) return false;
 
@@ -319,7 +286,6 @@ export const useConversations = () => {
     }
   };
 
-  // Handle sending a message
   const handleSendMessage = async (content: string) => {
     if (!content.trim() || !selectedConversationId) return false;
 

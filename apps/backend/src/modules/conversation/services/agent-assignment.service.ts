@@ -44,9 +44,17 @@ export class AgentAssignmentService {
         return null;
       }
 
-      // Calculate skill match scores
-      const scoredAgents = availableAgents.map((agent) => {
-        // Handle potential null skills array from database
+      // Filter out agents who have reached their maximum workload
+      const availableAgentsWithCapacity = availableAgents.filter(
+        (agent) => agent.currentWorkload < agent.maxWorkload,
+      );
+
+      if (!availableAgentsWithCapacity.length) {
+        this.logger.log('No agents with available capacity found');
+        return null;
+      }
+
+      const scoredAgents = availableAgentsWithCapacity.map((agent) => {
         const agentSkills = Array.isArray(agent.skills) ? agent.skills : [];
 
         const skillMatchScore = this.calculateSkillMatchScore(
@@ -63,7 +71,6 @@ export class AgentAssignmentService {
         };
       });
 
-      // Sort by score
       scoredAgents.sort((a, b) => b.score - a.score);
       const selectedAgent = scoredAgents[0];
 

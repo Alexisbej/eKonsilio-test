@@ -1,5 +1,5 @@
 import { useCallback, useState } from "react";
-import { toast } from "sonner"; // Make sure to install this package
+import { toast } from "sonner";
 
 interface ApiErrorState {
   message: string | null;
@@ -7,7 +7,6 @@ interface ApiErrorState {
   isError: boolean;
 }
 
-// Define a more specific error type
 interface ApiErrorResponse {
   response?: {
     data?: {
@@ -39,10 +38,8 @@ export const useApiError = () => {
       isError: true,
     });
 
-    // Show toast notification
     toast.error(errorMessage);
 
-    // Log error for monitoring
     console.error(`API Error (${errorCode}):`, errorMessage);
 
     return { message: errorMessage, code: errorCode };

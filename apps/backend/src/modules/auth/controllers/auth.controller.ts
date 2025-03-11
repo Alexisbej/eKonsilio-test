@@ -32,14 +32,16 @@ export class AuthController {
     new RateLimitGuard({ windowMs: 60 * 1000, max: 10 }),
     AuthGuard('google'),
   )
-  googleAuth(@Req() req) {
-    // This route initiates Google OAuth flow
-    // The actual implementation is handled by Passport
+  googleAuth() {
+    // This method is intentionally empty as it's handled by the AuthGuard
   }
 
   @Get('google/callback')
   @UseGuards(AuthGuard('google'))
-  async googleAuthRedirect(@Req() req, @Res() res: Response) {
+  async googleAuthRedirect(
+    @Req() req: { user: unknown },
+    @Res() res: Response,
+  ) {
     try {
       const { access_token } = await this.authService.login(req.user);
       const frontendUrl =
@@ -51,8 +53,8 @@ export class AuthController {
       );
     } catch (error) {
       this.logger.error(
-        `Error in Google auth callback: ${error.message}`,
-        error.stack,
+        `Error in Google auth callback: ${(error as Error).message}`,
+        (error as Error).stack,
       );
       return res.redirect(
         `${this.configService.get<string>('FRONTEND_URL')}/auth/error?message=Authentication failed`,
@@ -62,7 +64,7 @@ export class AuthController {
 
   @Get('profile')
   @UseGuards(AuthGuard('jwt'))
-  async getProfile(@Req() req) {
+  async getProfile(@Req() req: { user: { userId: string } }) {
     try {
       const user = await this.authService.getUserProfile(req.user.userId);
       if (!user) {
@@ -71,9 +73,12 @@ export class AuthController {
       return user;
     } catch (error) {
       this.logger.error(
-        `Error retrieving user profile: ${error.message}`,
-        error.stack,
+        `Error retrieving user profile: ${(error as Error).message}`,
+        (error as Error).stack,
       );
+      if (error instanceof UnauthorizedException) {
+        throw error;
+      }
       throw new UnauthorizedException('Failed to retrieve user profile');
     }
   }
@@ -91,7 +96,6 @@ export class AuthController {
       const { token, userId } =
         await this.authService.createVisitorSession(tenantId);
 
-      // Set secure cookie options
       const isProduction =
         this.configService.get<string>('NODE_ENV') === 'production';
 
@@ -105,8 +109,8 @@ export class AuthController {
       return res.json({ userId, token });
     } catch (error) {
       this.logger.error(
-        `Error creating visitor session: ${error.message}`,
-        error.stack,
+        `Error creating visitor session: ${(error as Error).message}`,
+        (error as Error).stack,
       );
       throw new BadRequestException('Failed to create visitor session');
     }
@@ -114,13 +118,16 @@ export class AuthController {
 
   @Get('visitor/profile')
   @UseGuards(AuthGuard('visitor-jwt'))
-  getVisitorProfile(@Req() req) {
+  async getVisitorProfile(@Req() req: { user: unknown }) {
     try {
+      if (!req.user) {
+        throw new UnauthorizedException('User not found');
+      }
       return req.user;
     } catch (error) {
       this.logger.error(
-        `Error retrieving visitor profile: ${error.message}`,
-        error.stack,
+        `Error retrieving visitor profile: ${(error as Error).message}`,
+        (error as Error).stack,
       );
       throw new UnauthorizedException('Failed to retrieve visitor profile');
     }

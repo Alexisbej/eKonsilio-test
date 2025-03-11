@@ -11,19 +11,31 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ekonsilio"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
-  backend:
-    build: ../apps/backend
+  apps:
+    build:
+      context: .
+      dockerfile: Dockerfile
     ports:
-      - "3000:3000"
+      - "3000:3000" # backend
+      - "3001:3001" # admin
+      - "3002:3002" # visitor-chat
     environment:
       DATABASE_URL: postgres://ekonsilio:password@postgres:5432/ekonsilio_db
       JWT_SECRET: your_jwt_secret
       GOOGLE_CLIENT_ID: your_google_client_id
       GOOGLE_CLIENT_SECRET: your_google_client_secret
       DEFAULT_TENANT_ID: your_default_tenant_id
+      NEXT_PUBLIC_API_URL: http://localhost:3000
+      NODE_ENV: production
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
 
 volumes:
   postgres_data:

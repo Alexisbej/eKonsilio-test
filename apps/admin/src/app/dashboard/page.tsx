@@ -20,7 +20,6 @@ import {
   YAxis,
 } from "recharts";
 
-// Mock data for charts
 const conversationData = [
   { time: "10:00", count: 120 },
   { time: "11:00", count: 180 },
@@ -49,12 +48,10 @@ const leadsData = [
 
 import { useEffect, useState } from "react";
 
-// Create a client component for the timestamp
 function LastUpdated() {
   const [dateString, setDateString] = useState("");
 
   useEffect(() => {
-    // Only run on client-side
     setDateString(new Date().toLocaleString());
   }, []);
 

@@ -1,14 +1,15 @@
+import { CONFIG } from "@/config";
 import { createConversation } from "@/lib/api";
-import { Conversation, Message, VisitorInfo } from "@/types";
 import { useMessageInput } from "@ekonsilio/chat-core";
 import { useSocket } from "@ekonsilio/chat-socket";
+import { Conversation, Message, VisitorInfo } from "@ekonsilio/types";
 import { useEffect, useRef, useState } from "react";
 
 interface UseChatWidgetReturn {
   visitorInfo: VisitorInfo | null;
   visitorFormData: VisitorInfo;
   conversation: Conversation | null;
-  isStartingChat: boolean;
+  isLoading: boolean;
   formSubmitted: boolean;
   newMessage: string;
   setNewMessage: (value: string) => void;
@@ -16,54 +17,56 @@ interface UseChatWidgetReturn {
   sendMessageHandler: (content: string) => Promise<boolean>;
   handleVisitorInfoChange: (field: keyof VisitorInfo, value: string) => void;
   handleFormSubmit: () => Promise<void>;
+  error: string | null;
+  resetError: () => void;
 }
 
 export const useChatWidget = (
   initialConversation?: Conversation,
 ): UseChatWidgetReturn => {
-  // Visitor info state
   const [visitorInfo, setVisitorInfo] = useState<VisitorInfo | null>(null);
   const [visitorFormData, setVisitorFormData] = useState<VisitorInfo>({
     name: "",
     email: "",
   });
 
-  // Conversation state
   const [conversation, setConversation] = useState<Conversation | null>(
     initialConversation || null,
   );
-  const [isStartingChat, setIsStartingChat] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [formSubmitted, setFormSubmitted] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  // Persist visitorId across renders
   const visitorIdRef = useRef<string>(
     "visitor-" + Math.random().toString(36).substring(2, 9),
   );
-  // Prefer visitor email as id if available
+
   const visitorId = visitorInfo?.email || visitorIdRef.current;
 
-  // Initialize socket connection using the visitor ID
   const { connected, sendMessage, subscribeToConversation } = useSocket({
     userId: visitorId,
     isAgent: false,
     tokenKey: "visitor_token",
   });
 
-  // Track whether we've subscribed to the conversation messages already
   const hasSubscribedRef = useRef(false);
 
-  // Handle incoming messages from socket
+  const resetError = () => setError(null);
+
   const handleNewMessage = (message: Message) => {
     if (!conversation) return;
 
-    // Filter out messages sent by the visitor (to avoid duplicates)
+    console.log("new message", message);
+
     if (message.user?.role === "VISITOR") return;
 
-    // If the message matches our own (from a temp message), replace it
-    if (message.sender === "user" && message.userId === visitorId) {
-      setConversation((prev) => {
-        if (!prev) return null;
-        const updatedMessages = prev.messages.filter(
+    setConversation((prev: Conversation | null) => {
+      if (!prev) return null;
+
+      if (prev.messages?.some((m) => m.id === message.id)) return prev;
+
+      if (message.sender === "user" && message.userId === visitorId) {
+        const updatedMessages = prev.messages?.filter(
           (msg) => !msg.id.startsWith("temp-"),
         );
         return {
@@ -72,26 +75,21 @@ export const useChatWidget = (
           lastMessage: message.content,
           lastMessageTime: message.timestamp,
         };
-      });
-      return;
-    }
+      }
 
-    // Otherwise, add the new message if it doesn't exist yet
-    setConversation((prev) => {
-      if (!prev) return null;
-      if (prev.messages.some((m) => m.id === message.id)) return prev;
       return {
         ...prev,
-        messages: [...prev.messages, message],
+        messages: Array.isArray(prev.messages)
+          ? [...prev.messages, message]
+          : [message],
         lastMessage: message.content,
         lastMessageTime: message.timestamp,
       };
     });
   };
 
-  // Subscribe to conversation messages once a conversation exists
   useEffect(() => {
-    if (conversation?.id && !hasSubscribedRef.current) {
+    if (conversation?.id && !hasSubscribedRef.current && connected) {
       hasSubscribedRef.current = true;
       const unsubscribe = subscribeToConversation(
         conversation.id,
@@ -102,37 +100,69 @@ export const useChatWidget = (
         unsubscribe();
       };
     }
-  }, [conversation?.id, subscribeToConversation]);
+  }, [conversation?.id, subscribeToConversation, connected]);
 
-  // Handle sending a message (with an optimistic update)
+  useEffect(() => {
+    if (!connected && conversation) {
+      setError("Lost connection to chat server. Please refresh the page.");
+    } else if (
+      connected &&
+      error === "Lost connection to chat server. Please refresh the page."
+    ) {
+      setError(null);
+    }
+  }, [connected, conversation, error]);
+
   const handleSendMessage = async (content: string): Promise<boolean> => {
-    if (!conversation || !connected) return false;
+    if (!conversation || !connected) {
+      setError("Cannot send message: not connected to chat server");
+      return false;
+    }
 
-    const tempMessage: Message = {
-      id: `temp-${Date.now()}`,
-      content,
-      sender: "user",
-      timestamp: new Date(),
-      createdAt: new Date().toISOString(),
-      userId: visitorId,
-    };
+    if (!content.trim() || content.length > CONFIG.CHAT.MAX_MESSAGE_LENGTH) {
+      return false;
+    }
 
-    setConversation((prev) => {
-      if (!prev) return null;
-      return {
-        ...prev,
-        messages: Array.isArray(prev.messages)
-          ? [...prev.messages, tempMessage]
-          : [tempMessage],
-        lastMessage: content,
-        lastMessageTime: new Date(),
+    setIsLoading(true);
+
+    try {
+      const tempMessage: Message = {
+        id: `temp-${Date.now()}`,
+        content,
+        sender: "user",
+        timestamp: new Date(),
+        createdAt: new Date().toISOString(),
+        userId: visitorId,
       };
-    });
 
-    return sendMessage(conversation.id, content, visitorId);
+      setConversation((prev) => {
+        if (!prev) return null;
+        return {
+          ...prev,
+          messages: Array.isArray(prev.messages)
+            ? [...prev.messages, tempMessage]
+            : [tempMessage],
+          lastMessage: content,
+          lastMessageTime: new Date(),
+        };
+      });
+
+      const success = await sendMessage(conversation.id, content, visitorId);
+
+      if (!success) {
+        throw new Error("Failed to send message");
+      }
+
+      return success;
+    } catch (err) {
+      console.error("Error sending message:", err);
+      setError("Failed to send message. Please try again.");
+      return false;
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  // Use message input hook (handles text input state and key events)
   const {
     newMessage,
     setNewMessage,
@@ -140,29 +170,39 @@ export const useChatWidget = (
     handleKeyDown,
   } = useMessageInput(handleSendMessage);
 
-  // Update visitor form data
   const handleVisitorInfoChange = (field: keyof VisitorInfo, value: string) => {
+    if (field === "email" && value.length > 100) return;
+    if (field === "name" && value.length > 50) return;
+
     setVisitorFormData((prev) => ({
       ...prev,
       [field]: value,
     }));
   };
 
-  // Handle visitor form submission and conversation creation
   const handleFormSubmit = async () => {
     if (!visitorFormData.name || !visitorFormData.email) return;
 
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(visitorFormData.email)) {
+      setError("Please enter a valid email address");
+      return;
+    }
+
     setVisitorInfo(visitorFormData);
     setFormSubmitted(true);
+    setError(null);
 
     try {
-      setIsStartingChat(true);
+      setIsLoading(true);
       const newConversation = await createConversation(visitorFormData);
       setConversation(newConversation);
-    } catch (error) {
-      console.error("Failed to start conversation:", error);
+    } catch (err) {
+      console.error("Failed to start conversation:", err);
+      setError("Failed to start conversation. Please try again.");
+      setFormSubmitted(false);
     } finally {
-      setIsStartingChat(false);
+      setIsLoading(false);
     }
   };
 
@@ -170,7 +210,7 @@ export const useChatWidget = (
     visitorInfo,
     visitorFormData,
     conversation,
-    isStartingChat,
+    isLoading,
     formSubmitted,
     newMessage,
     setNewMessage,
@@ -178,5 +218,7 @@ export const useChatWidget = (
     sendMessageHandler,
     handleVisitorInfoChange,
     handleFormSubmit,
+    error,
+    resetError,
   };
 };

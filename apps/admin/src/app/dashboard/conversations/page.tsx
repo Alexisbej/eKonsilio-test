@@ -18,7 +18,6 @@ import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { MessageSquare } from "lucide-react";
 import { useEffect } from "react";
 
-// Create a client
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -28,7 +27,6 @@ const queryClient = new QueryClient({
   },
 });
 
-// Wrap the main content with the QueryClientProvider
 export default function ConversationsPageWrapper() {
   return (
     <QueryClientProvider client={queryClient}>
@@ -72,16 +70,12 @@ function ConversationsPageContent() {
     handleKeyDown,
   } = useMessageInput(handleSendMessage);
 
-  // Initial data fetch handled by React Query
-
-  // Set the first conversation as selected by default
   useEffect(() => {
     if (conversations.length > 0 && !selectedConversation) {
       handleSelectConversation(conversations[0]);
     }
   }, [conversations, selectedConversation]);
 
-  // Setup WebSocket listeners for the selected conversation
   useEffect(() => {
     if (!selectedConversation) return;
 
@@ -89,7 +83,6 @@ function ConversationsPageContent() {
     return unsubscribe;
   }, [selectedConversation]);
 
-  // Subscribe to new conversations
   useEffect(() => {
     const unsubscribe = setupNewConversationListener();
     return unsubscribe;
@@ -101,7 +94,6 @@ function ConversationsPageContent() {
 
   return (
     <div className="flex h-full">
-      {/* Conversations list */}
       <LoadingState
         isLoading={loading && conversations.length === 0}
         loadingText="Loading conversations..."
@@ -116,17 +108,14 @@ function ConversationsPageContent() {
         />
       </LoadingState>
 
-      {/* Conversation detail */}
       <div className="flex-1 flex flex-col h-full">
         {selectedConversation ? (
           <>
-            {/* Conversation header */}
             <ConversationHeader
               conversation={selectedConversation}
               onResolve={handleShowResolveConfirmation}
             />
 
-            {/* Resolve confirmation dialog */}
             <ResolveConfirmationDialog
               open={showResolveConfirmation}
               onOpenChange={setShowResolveConfirmation}
@@ -136,7 +125,6 @@ function ConversationsPageContent() {
               error={resolveError}
             />
 
-            {/* Messages */}
             <LoadingState
               isLoading={loading && selectedConversation.messages?.length === 0}
               loadingText="Loading messages..."
@@ -145,7 +133,6 @@ function ConversationsPageContent() {
               <MessagesList conversation={selectedConversation} />
             </LoadingState>
 
-            {/* Message input */}
             {selectedConversation.status !== "CLOSED" && (
               <MessageInput
                 value={newMessage}
@@ -166,7 +153,6 @@ function ConversationsPageContent() {
         )}
       </div>
 
-      {/* Offline indicator */}
       <OfflineIndicator />
     </div>
   );

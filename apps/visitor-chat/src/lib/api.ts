@@ -1,31 +1,25 @@
-import { Conversation, VisitorInfo } from "@/types";
+import { CONFIG } from "@/config";
+import { Conversation, VisitorInfo } from "@ekonsilio/types";
 import axios from "axios";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api";
-
 const api = axios.create({
-  baseURL: API_URL,
+  baseURL: CONFIG.API.BASE_URL,
   withCredentials: true,
 });
 
-// Create a visitor session first, then create a conversation
 export const createConversation = async (
   visitorInfo: VisitorInfo,
 ): Promise<Conversation> => {
   try {
-    // First create a visitor session to get a valid userId
     const visitorSession = await api.post("/auth/visitor", {
-      tenantId:
-        process.env.DEFAULT_TENANT_ID || "b5f88040-a8bf-4b1e-99c2-1650c4fcbf3f",
+      tenantId: CONFIG.API.DEFAULT_TENANT_ID,
     });
 
     const userId = visitorSession.data.userId;
 
-    // Then create the conversation with the valid userId
     const response = await api.post("/conversations", {
-      userId: userId, // Use the userId from the visitor session
-      tenantId:
-        process.env.DEFAULT_TENANT_ID || "b5f88040-a8bf-4b1e-99c2-1650c4fcbf3f",
+      userId: userId,
+      tenantId: CONFIG.API.DEFAULT_TENANT_ID,
       title: `Support for ${visitorInfo.name}`,
       metadata: {
         visitorInfo,

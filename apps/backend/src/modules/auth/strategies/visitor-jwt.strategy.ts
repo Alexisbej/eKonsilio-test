@@ -20,7 +20,7 @@ export class VisitorJwtStrategy extends PassportStrategy(
     });
   }
 
-  async validate(payload: any) {
+  validate(payload: any) {
     return {
       userId: payload.sub,
       role: 'VISITOR',

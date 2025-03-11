@@ -3,19 +3,22 @@ FROM node:20-alpine AS builder
 WORKDIR /app
 
 # Copy package files first for better layer caching
-COPY package*.json ./
+COPY package.json pnpm-lock.yaml ./
 
-# Install dependencies
-RUN npm ci
+# Install specific pnpm version and dependencies
+RUN npm install -g pnpm && pnpm install --no-frozen-lockfile
 
 # Copy the rest of the application code
 COPY . .
 
-# Generate Prisma client
-RUN npx prisma generate
+# Fix the prisma generate command - use relative path
+RUN pnpx prisma generate --schema=./prisma/schema.prisma
 
 # Build the application
-RUN npm run build
+RUN pnpm run build
+
+# Copy Prisma schema to dist folder to ensure it's available at runtime
+RUN mkdir -p dist/prisma && cp prisma/schema.prisma dist/prisma/
 
 # Production image
 FROM node:20-alpine
@@ -44,4 +47,4 @@ EXPOSE 3000
 ENV NODE_ENV=production
 
 # Command to run the application
-CMD ["npm", "run", "start:prod"]
+CMD ["node", "dist/main.js"]

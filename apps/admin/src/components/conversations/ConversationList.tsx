@@ -24,15 +24,13 @@ export function ConversationList({
   selectedConversationId,
   onSelectConversation,
 }: ConversationListProps) {
-  // Add state for filters
   const [search, setSearch] = useState("");
-  // Update the state type to match DateRange
+
   const [dateRange, setDateRange] = useState<DateRange>({
     from: null,
     to: null,
   });
 
-  // Create a handler function to adapt the types
   const handleDateRangeChange = (range: DateRange) => {
     setDateRange(range);
   };
@@ -40,10 +38,8 @@ export function ConversationList({
 
   const debouncedSearch = useDebounce(search, 300);
 
-  // Filter conversations based on search, date range, and status
   const filteredConversations = React.useMemo(() => {
     return conversations.filter((conversation) => {
-      // Filter by search term
       const matchesSearch = debouncedSearch
         ? conversation.user.name
             ?.toLowerCase()
@@ -53,12 +49,10 @@ export function ConversationList({
             .includes(debouncedSearch.toLowerCase())
         : true;
 
-      // Filter by status
       const matchesStatus =
         status === "all" ? true : conversation.status === status;
 
-      // Filter by date range (simplified - you might want to enhance this)
-      const matchesDateRange = true; // Implement date filtering if needed
+      const matchesDateRange = true;
 
       return matchesSearch && matchesStatus && matchesDateRange;
     });

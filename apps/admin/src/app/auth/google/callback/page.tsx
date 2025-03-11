@@ -5,25 +5,20 @@ import { ROUTES } from "@/lib/constants";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
 
-// Create a component that uses useSearchParams inside Suspense
 function GoogleCallbackContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // Google OAuth returns a code parameter, not a token
     const code = searchParams.get("code");
     const token = searchParams.get("token");
 
-    // If we have a token directly, use it (this happens when redirected from backend)
     if (token) {
       const completeAuth = async () => {
         try {
-          // Process the token and get user data
           await handleGoogleCallback(token);
 
-          // Redirect to dashboard after successful authentication
           router.push(ROUTES.DASHBOARD);
         } catch (err) {
           console.error("Authentication error:", err);
@@ -35,17 +30,13 @@ function GoogleCallbackContent() {
       return;
     }
 
-    // If we have a code but no token, we need to exchange the code for a token
     if (code) {
-      // The backend should handle the code exchange
-      // Redirect to the backend callback endpoint with the code
       const API_URL =
         process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
       window.location.href = `${API_URL}/auth/google/callback?code=${code}`;
       return;
     }
 
-    // If we have neither code nor token, show an error
     setError("No authentication code or token received");
   }, [searchParams, router]);
 
@@ -87,7 +78,6 @@ function GoogleCallbackContent() {
   );
 }
 
-// Loading fallback component
 function LoadingFallback() {
   return (
     <div className="flex min-h-screen flex-col items-center justify-center p-4">
@@ -104,7 +94,6 @@ function LoadingFallback() {
   );
 }
 
-// Main component with Suspense boundary
 export default function GoogleCallbackPage() {
   return (
     <Suspense fallback={<LoadingFallback />}>

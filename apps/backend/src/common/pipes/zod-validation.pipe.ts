@@ -9,7 +9,6 @@ export class ZodValidationPipe implements PipeTransform {
   ) {}
 
   transform(value: any) {
-    // If the value is undefined and it's optional, return undefined
     if (value === undefined && this.isOptional) {
       return undefined;
     }
@@ -17,9 +16,13 @@ export class ZodValidationPipe implements PipeTransform {
     try {
       return this.schema.parse(value);
     } catch (error) {
-      throw new BadRequestException(
-        `Validation failed: ${error.errors.map((e) => e.message).join(', ')}`,
-      );
+      if (error instanceof Error && 'errors' in error) {
+        const zodError = error as { errors: Array<{ message: string }> };
+        throw new BadRequestException(
+          `Validation failed: ${zodError.errors.map((e) => e.message).join(', ')}`,
+        );
+      }
+      throw new BadRequestException('Validation failed');
     }
   }
 }

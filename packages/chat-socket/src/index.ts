@@ -10,7 +10,26 @@ export interface SocketConfig {
   isAgent?: boolean;
 }
 
-export function useSocket(config: SocketConfig) {
+interface SocketHook {
+  socket: Socket | null;
+  connected: boolean;
+  subscribeToConversation: (
+    conversationId: string,
+    callback: (message: Message) => void,
+  ) => () => void;
+  subscribeToNewConversations: (
+    callback: (conversationId: string) => void,
+  ) => () => void;
+  sendMessage: (
+    conversationId: string,
+    content: string,
+    senderId: string,
+  ) => boolean;
+  reconnect: () => void;
+  joinConversation: (conversationId: string) => boolean;
+  leaveConversation: (conversationId: string) => boolean;
+}
+export function useSocket(config: SocketConfig): SocketHook {
   const {
     userId,
     authToken,
@@ -32,7 +51,6 @@ export function useSocket(config: SocketConfig) {
       console.log("Socket connected");
       setConnected(true);
 
-      // Rejoin any conversations we were previously subscribed to
       subscribedConversationsRef.current.forEach((conversationId) => {
         socketInstance.emit("join_conversation", { conversationId });
       });
@@ -50,25 +68,20 @@ export function useSocket(config: SocketConfig) {
     };
   }, [userId, authToken, tokenKey, apiUrl, isAgent]);
 
-  // Subscribe to messages for a specific conversation
   const subscribeToConversation = (
     conversationId: string,
     callback: (message: Message) => void,
   ) => {
     if (!socket) return () => {};
 
-    // Only join the conversation if we haven't already
     if (!subscribedConversationsRef.current.has(conversationId)) {
       socket.emit("join_conversation", { conversationId });
       subscribedConversationsRef.current.add(conversationId);
     }
 
-    // Ensure we have a unique event name for this conversation
     const eventName = `conversation:${conversationId}:message`;
 
-    // Create a message handler that filters out duplicates
     const messageHandler = (message: Message) => {
-      // For visitor chat, only process messages from agents or from other users
       if (
         isAgent ||
         message.sender === "agent" ||
@@ -85,7 +98,6 @@ export function useSocket(config: SocketConfig) {
     };
   };
 
-  // Subscribe to new conversation notifications
   const subscribeToNewConversations = (
     callback: (conversationId: string) => void,
   ) => {
@@ -99,7 +111,6 @@ export function useSocket(config: SocketConfig) {
     };
   };
 
-  // Send a message via socket
   const sendMessage = (
     conversationId: string,
     content: string,
@@ -116,14 +127,12 @@ export function useSocket(config: SocketConfig) {
     return true;
   };
 
-  // Reconnect socket if needed
   const reconnect = () => {
     if (socket) {
       socket.connect();
     }
   };
 
-  // Explicitly join a conversation room
   const joinConversation = (conversationId: string): boolean => {
     if (!socket || !connected) return false;
 
@@ -134,7 +143,6 @@ export function useSocket(config: SocketConfig) {
     return true;
   };
 
-  // Explicitly leave a conversation room
   const leaveConversation = (conversationId: string): boolean => {
     if (!socket || !connected) return false;
 

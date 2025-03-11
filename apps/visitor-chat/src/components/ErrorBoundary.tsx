@@ -22,7 +22,6 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
   }
 
   static getDerivedStateFromError(error: Error): ErrorBoundaryState {
-    // Update state so the next render will show the fallback UI
     return {
       hasError: true,
       error,
@@ -30,22 +29,32 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo): void {
-    // You can log the error to an error reporting service
     console.error("ErrorBoundary caught an error:", error, errorInfo);
   }
 
   render(): ReactNode {
     if (this.state.hasError) {
-      // You can render any custom fallback UI
       return (
         this.props.fallback || (
-          <div className="p-6 rounded-lg bg-red-50 border border-red-200">
+          <div
+            className="p-6 rounded-lg bg-red-50 border border-red-200"
+            role="alert"
+            aria-live="assertive"
+          >
             <h2 className="text-xl font-bold text-red-700 mb-2">
               Something went wrong
             </h2>
             <p className="text-red-600 mb-4">
               The chat application encountered an unexpected error.
             </p>
+            <details className="mb-4">
+              <summary className="cursor-pointer text-red-600 hover:text-red-800">
+                Error details
+              </summary>
+              <pre className="mt-2 p-2 bg-red-100 rounded text-sm overflow-auto">
+                {this.state.error?.toString()}
+              </pre>
+            </details>
             <button
               onClick={() => this.setState({ hasError: false, error: null })}
               className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors"

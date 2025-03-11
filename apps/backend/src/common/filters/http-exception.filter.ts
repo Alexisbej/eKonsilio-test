@@ -26,8 +26,9 @@ export class HttpExceptionFilter implements ExceptionFilter {
       const exceptionResponse = exception.getResponse();
 
       if (typeof exceptionResponse === 'object') {
-        message = (exceptionResponse as any).message || message;
-        error = (exceptionResponse as any).error || error;
+        const typedResponse = exceptionResponse as Record<string, unknown>;
+        message = (typedResponse.message as string) || message;
+        error = (typedResponse.error as string) || error;
       } else {
         message = exceptionResponse;
       }
@@ -35,13 +36,11 @@ export class HttpExceptionFilter implements ExceptionFilter {
       message = exception.message;
     }
 
-    // Log the error
     this.logger.error(
       `${request.method} ${request.url} - ${status} - ${message}`,
       exception instanceof Error ? exception.stack : '',
     );
 
-    // Don't expose internal server errors in production
     if (
       status === HttpStatus.INTERNAL_SERVER_ERROR &&
       process.env.NODE_ENV === 'production'

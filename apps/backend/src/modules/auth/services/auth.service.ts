@@ -1,10 +1,11 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { PrismaService } from 'prisma/prisma.service';
 import { v4 as uuidv4 } from 'uuid';
+import { PrismaService } from '../../../../prisma/prisma.service';
 
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name);
   constructor(
     private readonly jwtService: JwtService,
     private readonly prisma: PrismaService,
@@ -99,6 +100,10 @@ export class AuthService {
       if (!user) return null;
       return user;
     } catch (error) {
+      this.logger.error(
+        `Error validating visitor token: ${(error as Error).message}`,
+        (error as Error).stack,
+      );
       return null;
     }
   }

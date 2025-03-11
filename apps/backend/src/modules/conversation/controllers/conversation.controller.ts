@@ -156,7 +156,6 @@ export class ConversationController {
     }
   }
 
-  // Removed duplicate closeConversation method and using resolveConversation instead
   @Put(':id/close')
   @UseGuards(AuthGuard('jwt'))
   async closeConversation(@Param('id') id: string) {

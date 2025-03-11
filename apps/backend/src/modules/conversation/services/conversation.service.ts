@@ -17,7 +17,6 @@ export class ConversationService {
 
   async createConversation(data: CreateConversationDto) {
     try {
-      // Use transaction to ensure data consistency
       return await this.prisma.$transaction(async (prisma) => {
         const conversation = await prisma.conversation.create({
           data: {
@@ -153,7 +152,6 @@ export class ConversationService {
     requiredSkills: string[] = [],
   ) {
     try {
-      // First check if conversation exists
       const conversation = await this.prisma.conversation.findUnique({
         where: { id: conversationId },
       });
@@ -215,6 +213,15 @@ export class ConversationService {
           updatedConversation.agent.id,
           conversationId,
         );
+        await this.prisma.user.update({
+          where: { id: updatedConversation.agent.id },
+          data: {
+            currentWorkload: Math.max(
+              updatedConversation.agent.currentWorkload - 1,
+              0,
+            ),
+          },
+        });
       }
 
       return updatedConversation;

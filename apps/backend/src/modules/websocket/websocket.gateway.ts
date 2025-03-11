@@ -35,10 +35,8 @@ export class WebsocketGateway
 
   async handleConnection(client: Socket) {
     try {
-      // Extract token from cookies, auth object, or headers
       let token = null;
 
-      // Check for cookies
       if (client.handshake.headers.cookie) {
         const cookies = client.handshake.headers.cookie
           .split(';')
@@ -48,15 +46,12 @@ export class WebsocketGateway
             return acc;
           }, {});
 
-        // Assuming your JWT cookie is named 'access_token'
-        // Adjust this name to match your actual cookie name
         token = cookies['auth_token'];
         if (!token) {
           token = cookies['visitor_token'];
         }
       }
 
-      // Fallback to auth token or authorization header if cookie not found
       if (!token) {
         token =
           client.handshake.auth.token ||

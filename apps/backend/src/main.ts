@@ -10,13 +10,10 @@ async function bootstrap() {
   const configService = app.get(ConfigService);
   const logger = new Logger('Bootstrap');
 
-  // Global middleware
   app.use(cookieParser());
 
-  // Global filters
   app.useGlobalFilters(new HttpExceptionFilter());
 
-  // Global pipes
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
@@ -25,7 +22,6 @@ async function bootstrap() {
     }),
   );
 
-  // CORS configuration
   app.enableCors({
     origin: [
       configService.get<string>('FRONTEND_URL'),
@@ -34,7 +30,6 @@ async function bootstrap() {
     credentials: true,
   });
 
-  // Set global prefix
   app.setGlobalPrefix('api');
 
   const port = configService.get<number>('PORT') || 3001;
@@ -43,4 +38,4 @@ async function bootstrap() {
   logger.log(`Application is running on: http://localhost:${port}`);
 }
 
-bootstrap();
+void bootstrap();

@@ -11,8 +11,6 @@ import { removeAuthCookie, setAuthCookie } from "./cookies";
  * Get the Google authentication URL from the backend
  */
 export async function getGoogleAuthUrl(): Promise<string> {
-  // In a real implementation, we would fetch the URL from the backend
-  // But since the backend doesn't have an endpoint for this yet, we'll construct it directly
   return `${API_URL}/auth/google`;
 }
 
@@ -24,7 +22,7 @@ export async function handleGoogleCallback(token: string): Promise<void> {
   if (!token) {
     throw new Error("No token provided");
   }
-  // Also set the token as a cookie for server-side access
+
   await setAuthCookie(token);
 }
 
@@ -55,7 +53,6 @@ export async function fetchUserProfile(): Promise<User> {
  * Logout the user
  */
 export async function logout(): Promise<void> {
-  // Remove the cookie for server-side
   await removeAuthCookie();
 }
 

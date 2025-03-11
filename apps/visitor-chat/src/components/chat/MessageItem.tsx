@@ -13,15 +13,21 @@ interface MessageItemProps {
 
 export const MessageItem = ({ message, visitorName }: MessageItemProps) => {
   const isUser = message.sender === "user";
+  const senderName = isUser ? visitorName : "Support Agent";
 
   return (
     <div className="flex flex-col space-y-4">
-      <div className={`flex ${isUser ? "justify-end" : "justify-start"}`}>
+      <div
+        className={`flex ${isUser ? "justify-end" : "justify-start"}`}
+        role="listitem"
+        aria-label={`Message from ${senderName}`}
+      >
         {!isUser && (
           <div className="mr-2 flex-shrink-0 mt-8">
             <Avatar className="h-8 w-8">
               <AvatarImage
                 src={`https://api.dicebear.com/7.x/initials/svg?seed=Agent`}
+                alt="Agent avatar"
               />
               <AvatarFallback>AG</AvatarFallback>
             </Avatar>
@@ -29,9 +35,7 @@ export const MessageItem = ({ message, visitorName }: MessageItemProps) => {
         )}
 
         <div className="max-w-[75%]">
-          <span className="block text-xs text-gray-500 mb-1">
-            {isUser ? visitorName : "Jeremy Smith"}
-          </span>
+          <span className="block text-xs text-gray-500 mb-1">{senderName}</span>
 
           <div
             className={`rounded-2xl px-4 py-2 ${
@@ -51,6 +55,7 @@ export const MessageItem = ({ message, visitorName }: MessageItemProps) => {
             <Avatar className="h-8 w-8">
               <AvatarImage
                 src={`https://api.dicebear.com/7.x/initials/svg?seed=${visitorName}`}
+                alt={`${visitorName} avatar`}
               />
               <AvatarFallback>{visitorName.charAt(0)}</AvatarFallback>
             </Avatar>
