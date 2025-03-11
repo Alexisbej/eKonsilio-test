@@ -1,6 +1,6 @@
+import { ConversationStatus } from '@ekonsilio/types';
 import { BadRequestException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
-import { ConversationStatus } from '@prisma/client';
 import { AgentAssignmentService } from '../services/agent-assignment.service';
 import { ConversationService } from '../services/conversation.service';
 import { ConversationController } from './conversation.controller';

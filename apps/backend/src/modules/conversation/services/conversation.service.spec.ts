@@ -1,5 +1,5 @@
+import { ConversationStatus } from '@ekonsilio/types';
 import { Test, TestingModule } from '@nestjs/testing';
-import { ConversationStatus } from '@prisma/client';
 import { PrismaService } from '../../../../prisma/prisma.service';
 import { WebsocketGateway } from '../../websocket/websocket.gateway';
 import { AgentAssignmentService } from './agent-assignment.service';
