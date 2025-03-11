@@ -1,50 +1,50 @@
-FROM node:20-alpine AS builder
+# Base image
+FROM node:18-alpine AS base
 
+# Enable corepack and install PNPM globally
+RUN corepack enable && corepack prepare pnpm@latest --activate
+ENV PNPM_HOME="/root/.local/share/pnpm"
+ENV PATH="$PNPM_HOME:$PATH"
+
+# Install dependencies
+FROM base AS builder
 WORKDIR /app
 
-# Copy package files first for better layer caching
-COPY package.json pnpm-lock.yaml ./
+# Install Turbo globally
+RUN pnpm add -g turbo
 
-# Install specific pnpm version and dependencies
-RUN npm install -g pnpm && pnpm install --no-frozen-lockfile
-
-# Copy the rest of the application code
+# Copy necessary files for pruning
 COPY . .
+RUN turbo prune backend --docker
 
-# Fix the prisma generate command - use relative path
-RUN pnpx prisma generate --schema=./prisma/schema.prisma
+# Install dependencies separately
+FROM base AS installer
+WORKDIR /app
 
-# Build the application
-RUN pnpm run build
+# Ensure PNPM is available in this stage too
+ENV PNPM_HOME="/root/.local/share/pnpm"
+ENV PATH="$PNPM_HOME:$PATH"
 
-# Copy Prisma schema to dist folder to ensure it's available at runtime
-RUN mkdir -p dist/prisma && cp prisma/schema.prisma dist/prisma/
+COPY --from=builder /app/out/json/ .
+RUN pnpm install --no-frozen-lockfile
+
+# Build the backend
+COPY --from=builder /app/out/full/ .
+RUN pnpm turbo run build --filter=backend...
 
 # Production image
-FROM node:20-alpine
-
-# Create a non-root user
-RUN addgroup -S appgroup && adduser -S appuser -G appgroup
-
+FROM base AS runner
 WORKDIR /app
 
-# Copy only necessary files from builder stage
-COPY --from=builder /app/package*.json ./
-COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/prisma ./prisma
+# Create a non-root user
+RUN addgroup -S nodejs && adduser -S nestjs -G nodejs
+USER nestjs
 
-# Set proper permissions
-RUN chown -R appuser:appgroup /app
+# Copy only the built backend files
+COPY --from=installer /app/apps/backend/dist ./dist
 
-# Use the non-root user
-USER appuser
+# Expose API port
+EXPOSE 3001
 
-# Expose the port the app runs on
-EXPOSE 3000
-
-# Set NODE_ENV to production
-ENV NODE_ENV=production
-
-# Command to run the application
+# Start the server
 CMD ["node", "dist/main.js"]

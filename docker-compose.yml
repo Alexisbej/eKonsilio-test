@@ -1,7 +1,7 @@
 version: "3.8"
 services:
   postgres:
-    image: postgres:14
+    image: postgres:15
     restart: always
     environment:
       POSTGRES_USER: ekonsilio
@@ -17,25 +17,34 @@ services:
       timeout: 5s
       retries: 5
 
-  apps:
+  backend:
     build:
       context: .
-      dockerfile: Dockerfile
-    ports:
-      - "3000:3000" # backend
-      - "3001:3001" # admin
-      - "3002:3002" # visitor-chat
-    environment:
-      DATABASE_URL: postgres://ekonsilio:password@postgres:5432/ekonsilio_db
-      JWT_SECRET: your_jwt_secret
-      GOOGLE_CLIENT_ID: your_google_client_id
-      GOOGLE_CLIENT_SECRET: your_google_client_secret
-      DEFAULT_TENANT_ID: your_default_tenant_id
-      NEXT_PUBLIC_API_URL: http://localhost:3000
-      NODE_ENV: production
+      dockerfile: apps/backend/Dockerfile
     depends_on:
-      postgres:
-        condition: service_healthy
+      - postgres
+    environment:
+      DATABASE_URL: postgres://ekonsilio:password@localhost:5432/ekonsilio_db
+    ports:
+      - "3001:3001"
+
+  frontend:
+    build:
+      context: .
+      dockerfile: apps/admin/Dockerfile
+    depends_on:
+      - backend
+    ports:
+      - "3000:3000"
+
+  visitor:
+    build:
+      context: .
+      dockerfile: apps/visitor-chat/Dockerfile
+    depends_on:
+      - backend
+    ports:
+      - "3002:3002"
 
 volumes:
   postgres_data:

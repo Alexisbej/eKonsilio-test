@@ -21,6 +21,7 @@
     "test:watch": {
       "cache": false,
       "persistent": true
-    }
+    },
+    "start": {}
   }
 }

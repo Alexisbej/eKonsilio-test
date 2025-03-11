@@ -3,6 +3,7 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { API_URL } from "@/lib/constants";
+import { removeAuthCookie } from "@/lib/cookies";
 import { User } from "@ekonsilio/types";
 import axios from "axios";
 import {
@@ -49,6 +50,7 @@ export default function DashboardLayout({
 
   const handleLogout = async () => {
     try {
+      await removeAuthCookie();
     } catch (error) {
       console.error("Error logging out:", error);
     }
