@@ -1,19 +1,33 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { PassportStrategy } from '@nestjs/passport';
-import { Strategy, VerifyCallback } from 'passport-google-oauth20';
+import {
+  Strategy,
+  StrategyOptions,
+  VerifyCallback,
+} from 'passport-google-oauth20';
 import { AuthService } from '../services/auth.service';
 
 @Injectable()
 export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
   private readonly logger = new Logger(GoogleStrategy.name);
 
-  constructor(private readonly authService: AuthService) {
-    super({
-      clientID: process.env.GOOGLE_CLIENT_ID!,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
-      callbackURL: 'http://localhost:3000/auth/google/callback',
+  constructor(
+    private readonly authService: AuthService,
+    private readonly configService: ConfigService,
+  ) {
+    const options: StrategyOptions = {
+      clientID: configService.get<string>('GOOGLE_CLIENT_ID') ?? '',
+      clientSecret: configService.get<string>('GOOGLE_CLIENT_SECRET') ?? '',
+      callbackURL: configService.get<string>('GOOGLE_CALLBACK_URL') ?? '',
       scope: ['email', 'profile'],
-    });
+    };
+
+    if (!options.clientID || !options.clientSecret || !options.callbackURL) {
+      throw new Error('Missing required Google OAuth configuration');
+    }
+
+    super(options);
   }
 
   async validate(
@@ -23,7 +37,9 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
     done: VerifyCallback,
   ) {
     try {
-      this.logger.log(`Google profile received: ${JSON.stringify(profile)}`);
+      this.logger.debug(
+        `Google authentication attempt for profile ID: ${profile?.id}`,
+      );
 
       if (!profile) {
         throw new Error('Google profile is undefined');
@@ -37,7 +53,7 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
 
       const userProfile = {
         email: emails[0].value,
-        name: emails[0].value || 'Google User',
+        name: profile.displayName || emails[0].value || 'Google User',
         googleId: id,
       };
 
@@ -46,6 +62,7 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
     } catch (error) {
       this.logger.error(
         `Error in Google strategy validation: ${error.message}`,
+        error.stack,
       );
       done(error, false);
     }

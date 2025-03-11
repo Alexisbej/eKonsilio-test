@@ -1,9 +1,11 @@
-import { Injectable } from '@nestjs/common';
-import { UserRole } from '@prisma/client';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { Conversation, UserRole } from '@prisma/client';
 import { PrismaService } from '../../../../prisma/prisma.service';
 
 @Injectable()
 export class AgentAssignmentService {
+  private readonly logger = new Logger(AgentAssignmentService.name);
+
   constructor(private prisma: PrismaService) {}
 
   /**
@@ -11,73 +13,87 @@ export class AgentAssignmentService {
    * skills, availability, and current workload
    */
   async assignAgentToConversation(
-    conversationId: string,
+    conversation: Conversation,
     requiredSkills: string[] = [],
+    tx?: any,
   ) {
-    const conversation = await this.prisma.conversation.findUnique({
-      where: { id: conversationId },
-      include: { tenant: true },
-    });
+    try {
+      if (!conversation) {
+        throw new NotFoundException(`Conversation not found`);
+      }
 
-    if (!conversation) {
-      throw new Error(`Conversation with ID ${conversationId} not found`);
-    }
+      const prisma = tx || this.prisma;
 
-    const availableAgents = await this.prisma.user.findMany({
-      where: {
-        role: UserRole.AGENT,
-        tenantId: conversation.tenantId,
-        isAvailable: true,
-      },
-      include: {
-        assignedConversations: {
-          where: {
-            status: { in: ['PENDING', 'ACTIVE'] },
-          },
+      const availableAgents = await prisma.user.findMany({
+        where: {
+          role: UserRole.AGENT,
+          tenantId: conversation.tenantId,
+          isAvailable: true,
         },
-      },
-    });
-
-    if (availableAgents.length === 0) {
-      console.log('No available agents found');
-      return null;
-    }
-
-    const scoredAgents = availableAgents.map((agent) => {
-      const skillMatchScore = this.calculateSkillMatchScore(
-        agent.skills,
-        requiredSkills,
-      );
-
-      const currentWorkload = agent.assignedConversations.length;
-      const workloadScore = 1 - currentWorkload / agent.maxWorkload;
-
-      const totalScore = skillMatchScore * 0.6 + workloadScore * 0.4;
-
-      return {
-        ...agent,
-        score: totalScore,
-        currentWorkload,
-      };
-    });
-
-    scoredAgents.sort((a, b) => b.score - a.score);
-
-    const selectedAgent = scoredAgents[0];
-
-    if (selectedAgent) {
-      await this.prisma.conversation.update({
-        where: { id: conversationId },
-        data: {
-          agentId: selectedAgent.id,
-          status: 'ACTIVE',
+        include: {
+          assignedConversations: {
+            where: {
+              status: { in: ['PENDING', 'ACTIVE'] },
+            },
+          },
         },
       });
 
-      return selectedAgent;
-    }
+      if (!availableAgents.length) {
+        this.logger.log('No available agents found');
+        return null;
+      }
 
-    return null;
+      // Calculate skill match scores
+      const scoredAgents = availableAgents.map((agent) => {
+        // Handle potential null skills array from database
+        const agentSkills = Array.isArray(agent.skills) ? agent.skills : [];
+
+        const skillMatchScore = this.calculateSkillMatchScore(
+          agentSkills,
+          requiredSkills,
+        );
+
+        const workloadScore = 1 - agent.currentWorkload / agent.maxWorkload;
+        const totalScore = skillMatchScore * 0.6 + workloadScore * 0.4;
+
+        return {
+          ...agent,
+          score: totalScore,
+        };
+      });
+
+      // Sort by score
+      scoredAgents.sort((a, b) => b.score - a.score);
+      const selectedAgent = scoredAgents[0];
+
+      if (selectedAgent) {
+        await prisma.conversation.update({
+          where: { id: conversation.id },
+          data: {
+            agentId: selectedAgent.id,
+            status: 'ACTIVE',
+          },
+        });
+
+        await prisma.user.update({
+          where: { id: selectedAgent.id },
+          data: {
+            currentWorkload: selectedAgent.currentWorkload + 1,
+          },
+        });
+
+        return selectedAgent;
+      }
+
+      return null;
+    } catch (error) {
+      this.logger.error(
+        `Error assigning agent to conversation: ${error.message}`,
+        error.stack,
+      );
+      throw error;
+    }
   }
 
   /**
@@ -88,7 +104,8 @@ export class AgentAssignmentService {
     agentSkills: string[],
     requiredSkills: string[],
   ): number {
-    if (requiredSkills.length === 0) return 1;
+    if (!requiredSkills.length) return 1;
+    if (!agentSkills.length) return 0;
 
     let matchCount = 0;
     for (const skill of requiredSkills) {
@@ -104,29 +121,77 @@ export class AgentAssignmentService {
    * Update agent availability
    */
   async updateAgentAvailability(agentId: string, isAvailable: boolean) {
-    return this.prisma.user.update({
-      where: { id: agentId },
-      data: { isAvailable },
-    });
+    try {
+      const agent = await this.prisma.user.findUnique({
+        where: { id: agentId },
+      });
+
+      if (!agent) {
+        throw new NotFoundException(`Agent with ID ${agentId} not found`);
+      }
+
+      return this.prisma.user.update({
+        where: { id: agentId },
+        data: { isAvailable },
+      });
+    } catch (error) {
+      this.logger.error(
+        `Error updating agent availability: ${error.message}`,
+        error.stack,
+      );
+      throw error;
+    }
   }
 
   /**
    * Update agent skills
    */
   async updateAgentSkills(agentId: string, skills: string[]) {
-    return this.prisma.user.update({
-      where: { id: agentId },
-      data: { skills },
-    });
+    try {
+      const agent = await this.prisma.user.findUnique({
+        where: { id: agentId },
+      });
+
+      if (!agent) {
+        throw new NotFoundException(`Agent with ID ${agentId} not found`);
+      }
+
+      return this.prisma.user.update({
+        where: { id: agentId },
+        data: { skills },
+      });
+    } catch (error) {
+      this.logger.error(
+        `Error updating agent skills: ${error.message}`,
+        error.stack,
+      );
+      throw error;
+    }
   }
 
   /**
    * Update agent maximum workload
    */
   async updateAgentMaxWorkload(agentId: string, maxWorkload: number) {
-    return this.prisma.user.update({
-      where: { id: agentId },
-      data: { maxWorkload },
-    });
+    try {
+      const agent = await this.prisma.user.findUnique({
+        where: { id: agentId },
+      });
+
+      if (!agent) {
+        throw new NotFoundException(`Agent with ID ${agentId} not found`);
+      }
+
+      return this.prisma.user.update({
+        where: { id: agentId },
+        data: { maxWorkload },
+      });
+    } catch (error) {
+      this.logger.error(
+        `Error updating agent workload: ${error.message}`,
+        error.stack,
+      );
+      throw error;
+    }
   }
 }

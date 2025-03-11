@@ -35,9 +35,33 @@ export class WebsocketGateway
 
   async handleConnection(client: Socket) {
     try {
-      const token =
-        client.handshake.auth.token ||
-        client.handshake.headers.authorization?.split(' ')[1];
+      // Extract token from cookies, auth object, or headers
+      let token = null;
+
+      // Check for cookies
+      if (client.handshake.headers.cookie) {
+        const cookies = client.handshake.headers.cookie
+          .split(';')
+          .reduce((acc, cookie) => {
+            const [key, value] = cookie.trim().split('=');
+            acc[key] = value;
+            return acc;
+          }, {});
+
+        // Assuming your JWT cookie is named 'access_token'
+        // Adjust this name to match your actual cookie name
+        token = cookies['auth_token'];
+        if (!token) {
+          token = cookies['visitor_token'];
+        }
+      }
+
+      // Fallback to auth token or authorization header if cookie not found
+      if (!token) {
+        token =
+          client.handshake.auth.token ||
+          client.handshake.headers.authorization?.split(' ')[1];
+      }
 
       if (!token) {
         client.disconnect();
@@ -139,7 +163,7 @@ export class WebsocketGateway
 
       this.server
         .to(`conversation:${data.conversationId}`)
-        .emit('new_message', message);
+        .emit(`conversation:${data.conversationId}:message`, message);
 
       return { success: true, message };
     } catch (error) {

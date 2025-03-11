@@ -1,5 +1,9 @@
 {
   "name": "my-turborepo",
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
   "private": true,
   "scripts": {
     "build": "turbo run build",

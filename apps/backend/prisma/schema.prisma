@@ -32,6 +32,7 @@ model User {
   temporaryToken    String?        @unique
   isAvailable       Boolean        @default(true)
   skills            String[]       @default([])
+  currentWorkload   Int            @default(0)
   maxWorkload       Int            @default(5)
   
   @@index([tenantId])
