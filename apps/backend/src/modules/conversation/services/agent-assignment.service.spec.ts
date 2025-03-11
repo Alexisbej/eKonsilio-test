@@ -1,5 +1,5 @@
-import { ConversationStatus, UserRole } from '@ekonsilio/types';
 import { Test, TestingModule } from '@nestjs/testing';
+import { ConversationStatus, UserRole } from '@prisma/client';
 import { PrismaService } from '../../../../prisma/prisma.service';
 import { AgentAssignmentService } from './agent-assignment.service';
 
