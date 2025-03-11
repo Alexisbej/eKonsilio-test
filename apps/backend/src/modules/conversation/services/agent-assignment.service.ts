@@ -44,7 +44,6 @@ export class AgentAssignmentService {
         return null;
       }
 
-      // Filter out agents who have reached their maximum workload
       const availableAgentsWithCapacity = availableAgents.filter(
         (agent) => agent.currentWorkload < agent.maxWorkload,
       );

@@ -30,7 +30,6 @@ describe('AuthService', () => {
 
     service = module.get<AuthService>(AuthService);
 
-    // Clear all mocks before each test
     jest.clearAllMocks();
   });
 

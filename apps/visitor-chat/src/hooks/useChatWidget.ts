@@ -1,5 +1,5 @@
-import { CONFIG } from "@/config";
 import { createConversation } from "@/lib/api";
+import { validateMessage, validateVisitorForm } from "@/lib/validations";
 import { useMessageInput } from "@ekonsilio/chat-core";
 import { useSocket } from "@ekonsilio/chat-socket";
 import { Conversation, Message, VisitorInfo } from "@ekonsilio/types";
@@ -119,7 +119,8 @@ export const useChatWidget = (
       return false;
     }
 
-    if (!content.trim() || content.length > CONFIG.CHAT.MAX_MESSAGE_LENGTH) {
+    const { success } = validateMessage(content);
+    if (!success) {
       return false;
     }
 
@@ -181,11 +182,13 @@ export const useChatWidget = (
   };
 
   const handleFormSubmit = async () => {
-    if (!visitorFormData.name || !visitorFormData.email) return;
+    const { success, error: validationError } =
+      validateVisitorForm(visitorFormData);
 
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(visitorFormData.email)) {
-      setError("Please enter a valid email address");
+    if (!success) {
+      const errorMessage =
+        validationError.errors[0]?.message || "Invalid form data";
+      setError(errorMessage);
       return;
     }
 

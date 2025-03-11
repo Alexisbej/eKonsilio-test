@@ -42,7 +42,6 @@ describe('AuthController', () => {
   } as unknown as Response;
 
   beforeEach(async () => {
-    // Mock console.error to suppress error logs during tests
     jest.spyOn(console, 'error').mockImplementation(() => {});
 
     const module: TestingModule = await Test.createTestingModule({
@@ -61,12 +60,10 @@ describe('AuthController', () => {
 
     controller = module.get<AuthController>(AuthController);
 
-    // Clear all mocks before each test
     jest.clearAllMocks();
   });
 
   afterEach(() => {
-    // Restore console.error after each test
     jest.restoreAllMocks();
   });
 

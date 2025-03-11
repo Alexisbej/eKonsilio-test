@@ -1,13 +1,14 @@
 import { Input } from "@/components/ui/input";
 
 import { Conversation } from "@ekonsilio/types";
-import { Search } from "lucide-react";
+import { AlertCircle, Search } from "lucide-react";
 import { ConversationItem } from "./ConversationItem";
 
 interface ConversationsListProps {
   conversations: Conversation[];
   selectedConversationId?: string;
   searchQuery: string;
+  searchError?: string | null;
   onSearchChange: (query: string) => void;
   onSelectConversation: (conversation: Conversation) => void;
 }
@@ -16,6 +17,7 @@ export const ConversationsList = ({
   conversations,
   selectedConversationId,
   searchQuery,
+  searchError,
   onSearchChange,
   onSelectConversation,
 }: ConversationsListProps) => {
@@ -26,10 +28,17 @@ export const ConversationsList = ({
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
           <Input
             placeholder="Search conversations..."
-            className="pl-9 pr-3 py-2 rounded-full border-slate-200 focus-visible:ring-blue-400"
+            className={`pl-9 pr-3 py-2 rounded-full border-slate-200 focus-visible:ring-blue-400 ${searchError ? "border-red-500" : ""}`}
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
+            aria-invalid={!!searchError}
           />
+          {searchError && (
+            <div className="text-red-500 text-xs mt-1 flex items-center">
+              <AlertCircle className="h-3 w-3 mr-1" />
+              {searchError}
+            </div>
+          )}
         </div>
       </div>
 

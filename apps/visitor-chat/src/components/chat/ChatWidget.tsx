@@ -51,11 +51,16 @@ export const ChatWidget = ({
 
   if (!formSubmitted) {
     return (
-      <div className="w-full max-w-md mx-auto p-6 bg-white rounded-lg shadow-md">
-        <h2 className="text-xl font-semibold mb-4">Start a Conversation</h2>
-        <div className="space-y-4">
-          <div>
-            <label htmlFor="name" className="block text-sm font-medium mb-1">
+      <div className="w-full max-w-md mx-auto p-8 bg-white rounded-xl shadow-lg transform transition-all duration-300 hover:shadow-xl">
+        <h2 className="text-2xl font-bold mb-6 text-gray-800 text-center">
+          Start a Conversation
+        </h2>
+        <div className="space-y-6">
+          <div className="relative">
+            <label
+              htmlFor="name"
+              className="block text-sm font-medium text-gray-700 mb-2"
+            >
               Your Name
             </label>
             <Input
@@ -63,13 +68,20 @@ export const ChatWidget = ({
               placeholder="Enter your name"
               value={visitorFormData.name}
               onChange={(e) => handleVisitorInfoChange("name", e.target.value)}
-              className="rounded-md"
+              className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 ${error?.includes("Name") ? "border-red-500" : "border-gray-300"}`}
               aria-required="true"
               maxLength={50}
+              aria-invalid={error?.includes("Name") ? "true" : "false"}
             />
+            {error?.includes("Name") && (
+              <p className="text-red-500 text-xs mt-1">{error}</p>
+            )}
           </div>
-          <div>
-            <label htmlFor="email" className="block text-sm font-medium mb-1">
+          <div className="relative">
+            <label
+              htmlFor="email"
+              className="block text-sm font-medium text-gray-700 mb-2"
+            >
               Your Email
             </label>
             <Input
@@ -78,20 +90,54 @@ export const ChatWidget = ({
               placeholder="Enter your email"
               value={visitorFormData.email}
               onChange={(e) => handleVisitorInfoChange("email", e.target.value)}
-              className="rounded-md"
+              className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 ${error?.includes("Email") || error?.includes("email") ? "border-red-500" : "border-gray-300"}`}
               aria-required="true"
               maxLength={100}
+              aria-invalid={
+                error?.includes("Email") || error?.includes("email")
+                  ? "true"
+                  : "false"
+              }
             />
+            {(error?.includes("Email") || error?.includes("email")) && (
+              <p className="text-red-500 text-xs mt-1">{error}</p>
+            )}
           </div>
           <Button
-            className="w-full bg-blue-500 hover:bg-blue-600 rounded-md"
+            className="w-full py-3 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-medium rounded-lg transform transition-all duration-200 hover:scale-[1.02] focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
             onClick={handleFormSubmit}
             disabled={
               !visitorFormData.name || !visitorFormData.email || isLoading
             }
             aria-busy={isLoading}
           >
-            {isLoading ? "Starting Chat..." : "Start Chat"}
+            {isLoading ? (
+              <span className="flex items-center justify-center">
+                <svg
+                  className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                >
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                  ></circle>
+                  <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                  ></path>
+                </svg>
+                Starting Chat...
+              </span>
+            ) : (
+              "Start Chat"
+            )}
           </Button>
         </div>
       </div>

@@ -1,5 +1,5 @@
 {
-  "name": "my-turborepo",
+  "name": "ekonsilio-test",
   "workspaces": [
     "packages/*",
     "apps/*"

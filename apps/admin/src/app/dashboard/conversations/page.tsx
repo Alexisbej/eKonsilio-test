@@ -50,7 +50,7 @@ function ConversationsPageContent() {
     setupNewConversationListener,
   } = useConversations();
 
-  const { searchQuery, setSearchQuery, filteredConversations } =
+  const { searchQuery, setSearchQuery, searchError, filteredConversations } =
     useSearch(conversations);
 
   const {
@@ -103,6 +103,7 @@ function ConversationsPageContent() {
           conversations={filteredConversations}
           selectedConversationId={selectedConversation?.id}
           searchQuery={searchQuery}
+          searchError={searchError}
           onSearchChange={setSearchQuery}
           onSelectConversation={handleSelectConversation}
         />
