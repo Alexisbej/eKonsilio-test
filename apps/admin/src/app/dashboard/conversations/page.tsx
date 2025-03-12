@@ -8,6 +8,7 @@ import { MessageInput } from "@/components/conversations/MessageInput";
 import { MessagesList } from "@/components/conversations/MessagesList";
 import { ResolveConfirmationDialog } from "@/components/conversations/ResolveConfirmationDialog";
 import { ErrorState } from "@/components/ErrorState";
+import { Button } from "@/components/ui/button";
 import { LoadingState } from "@/components/ui/loading-state";
 import { OfflineIndicator } from "@/components/ui/offline-indicator";
 import { useConversations } from "@/hooks/useConversations";
@@ -16,8 +17,8 @@ import { useSearch } from "@/hooks/useSearch";
 import { useMessageInput } from "@ekonsilio/chat-core";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
-import { MessageSquare } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { ChevronLeft, ChevronRight, MessageSquare } from "lucide-react";
+import { useEffect, useState } from "react";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -51,8 +52,7 @@ function ConversationsPageContent() {
     setupNewConversationListener,
   } = useConversations();
 
-  const { searchQuery, setSearchQuery, searchError, filteredConversations } =
-    useSearch(conversations);
+  const { filteredConversations } = useSearch(conversations);
 
   const {
     showResolveConfirmation,
@@ -70,6 +70,8 @@ function ConversationsPageContent() {
     handleSendMessage: sendMessage,
     handleKeyDown,
   } = useMessageInput(handleSendMessage);
+
+  const [showSidebar, setShowSidebar] = useState(true);
 
   useEffect(() => {
     if (conversations.length > 0 && !selectedConversation) {
@@ -89,46 +91,69 @@ function ConversationsPageContent() {
     return unsubscribe;
   }, []);
 
+  const [hasMore] = useState(false);
+
   if (error) {
     return <ErrorState error={error} onRetry={() => fetchConversations()} />;
   }
 
-  // Add these new states for pagination
-  const [hasMore, setHasMore] = useState(true);
-  const loadMore = useCallback(() => {
-    // Implement your pagination logic here
-    // This should be handled by your useConversations hook
-  }, []);
+  const loadMore = () => {};
+
+  const toggleSidebar = () => {
+    setShowSidebar(!showSidebar);
+  };
 
   return (
-    <div className="flex h-full">
-      <LoadingState
-        isLoading={loading && conversations.length === 0}
-        loadingText="Loading conversations..."
-        className="w-80 border-r"
+    <div className="flex h-full relative">
+      <div
+        className={`${
+          showSidebar ? "flex" : "hidden"
+        } md:flex flex-col h-full border-r absolute md:relative z-10 bg-background w-full md:w-80`}
       >
-        <ConversationList
-          conversations={filteredConversations}
-          isLoading={loading}
-          hasMore={hasMore}
-          loadMore={loadMore}
-          selectedConversationId={selectedConversation?.id}
-          onSelectConversation={(id) => {
-            const conversation = conversations.find((c) => c.id === id);
-            if (conversation) {
-              handleSelectConversation(conversation);
-            }
-          }}
-        />
-      </LoadingState>
+        <LoadingState
+          isLoading={loading && conversations.length === 0}
+          loadingText="Loading conversations..."
+          className="w-full"
+        >
+          <ConversationList
+            conversations={filteredConversations}
+            isLoading={loading}
+            hasMore={hasMore}
+            loadMore={loadMore}
+            selectedConversationId={selectedConversation?.id}
+            onSelectConversation={(id) => {
+              const conversation = conversations.find((c) => c.id === id);
+              if (conversation) {
+                handleSelectConversation(conversation);
+                if (window.innerWidth < 768) {
+                  setShowSidebar(false);
+                }
+              }
+            }}
+          />
+        </LoadingState>
+      </div>
 
       <div className="flex-1 flex flex-col h-full">
         {selectedConversation ? (
           <>
-            <ConversationHeader
-              conversation={selectedConversation}
-              onResolve={handleShowResolveConfirmation}
-            />
+            <div className="flex items-center">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={toggleSidebar}
+                className="md:hidden mr-2"
+              >
+                {showSidebar ? <ChevronLeft /> : <ChevronRight />}
+              </Button>
+
+              <div className="flex-1">
+                <ConversationHeader
+                  conversation={selectedConversation}
+                  onResolve={handleShowResolveConfirmation}
+                />
+              </div>
+            </div>
 
             <ResolveConfirmationDialog
               open={showResolveConfirmation}
@@ -157,13 +182,24 @@ function ConversationsPageContent() {
             )}
           </>
         ) : (
-          <ConversationEmptyState
-            title="No conversation selected"
-            description="Select a conversation from the list to view messages"
-            icon={
-              <MessageSquare className="h-12 w-12 text-muted-foreground/50" />
-            }
-          />
+          <>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={toggleSidebar}
+              className="md:hidden absolute top-2 left-2 z-20"
+            >
+              {showSidebar ? <ChevronLeft /> : <ChevronRight />}
+            </Button>
+
+            <ConversationEmptyState
+              title="No conversation selected"
+              description="Select a conversation from the list to view messages"
+              icon={
+                <MessageSquare className="h-12 w-12 text-muted-foreground/50" />
+              }
+            />
+          </>
         )}
       </div>
 
