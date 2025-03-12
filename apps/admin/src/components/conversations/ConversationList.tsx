@@ -25,23 +25,24 @@ export function ConversationList({
   onSelectConversation,
 }: ConversationListProps) {
   const [search, setSearch] = useState("");
-
   const [dateRange, setDateRange] = useState<DateRange>({
     from: null,
     to: null,
   });
+  const [status, setStatus] = useState<"all" | "ACTIVE" | "PENDING" | "CLOSED">(
+    "all",
+  );
 
   const handleDateRangeChange = (range: DateRange) => {
     setDateRange(range);
   };
-  const [status, setStatus] = useState<"all" | "PENDING" | "RESOLVED">("all");
 
   const debouncedSearch = useDebounce(search, 300);
 
   const filteredConversations = React.useMemo(() => {
     return conversations.filter((conversation) => {
       const matchesSearch = debouncedSearch
-        ? conversation.user.name
+        ? conversation.title
             ?.toLowerCase()
             .includes(debouncedSearch.toLowerCase()) ||
           conversation.lastMessage
@@ -52,6 +53,7 @@ export function ConversationList({
       const matchesStatus =
         status === "all" ? true : conversation.status === status;
 
+      // Add date range filtering logic here if needed
       const matchesDateRange = true;
 
       return matchesSearch && matchesStatus && matchesDateRange;
@@ -95,11 +97,12 @@ export function ConversationList({
             {filteredConversations.map((conversation) => (
               <ConversationListItem
                 key={conversation.id}
+                title={conversation.title}
                 id={conversation.id}
                 visitorName={conversation.user.name || "Anonymous"}
                 lastMessage={conversation.lastMessage || "No messages yet"}
                 lastMessageTime={conversation.lastMessageTime || new Date()}
-                status={conversation.status as "active" | "resolved"}
+                status={conversation.status}
                 unreadCount={conversation.unreadCount || 0}
                 isSelected={selectedConversationId === conversation.id}
                 onClick={() => onSelectConversation(conversation.id)}

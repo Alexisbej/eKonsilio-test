@@ -89,7 +89,7 @@ describe("useConversations", () => {
 
     (useMutation as jest.Mock).mockImplementation(({ onSuccess, onError }) => ({
       mutateAsync: jest.fn().mockImplementation(async (data) => {
-        if (data?.status === "RESOLVED") {
+        if (data?.status === "CLOSED") {
           if (onSuccess) {
             await onSuccess();
             mockInvalidateQueries({ queryKey: ["conversations"] });

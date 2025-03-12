@@ -27,6 +27,10 @@ export default function DashboardLayout({
   const pathname = usePathname();
   const router = useRouter();
 
+  // Add this to determine if we're on the conversations page
+  const isConversationsPage = pathname.startsWith("/dashboard/conversations");
+  const sidebarWidth = isConversationsPage ? "w-16" : "w-16 md:w-64";
+
   useEffect(() => {
     const fetchUser = async () => {
       try {
@@ -60,13 +64,24 @@ export default function DashboardLayout({
 
   return (
     <div className="flex h-screen bg-slate-50">
-      <div className="w-16 md:w-64 bg-white border-r flex flex-col">
+      <div
+        className={`${sidebarWidth} bg-white border-r flex flex-col transition-all duration-200`}
+      >
         <div className="p-4 border-b flex items-center justify-center md:justify-start">
-          <span className="hidden md:block font-bold text-xl">eKonsilio</span>
-          <span className="block md:hidden font-bold text-xl">e</span>
+          <span
+            className={`${isConversationsPage ? "hidden" : "hidden md:block"} font-bold text-xl`}
+          >
+            eKonsilio
+          </span>
+          <span
+            className={`${isConversationsPage ? "block" : "block md:hidden"} font-bold text-xl`}
+          >
+            e
+          </span>
         </div>
 
         <nav className="flex-1 p-2 space-y-1">
+          {/* Update each Link to conditionally show text based on conversations page */}
           <Link
             href="/dashboard"
             className={`flex items-center p-2 rounded-md ${
@@ -76,7 +91,11 @@ export default function DashboardLayout({
             }`}
           >
             <LayoutDashboard className="h-5 w-5 mr-3" />
-            <span className="hidden md:block">Dashboard</span>
+            <span
+              className={`${isConversationsPage ? "hidden" : "hidden md:block"}`}
+            >
+              Dashboard
+            </span>
           </Link>
 
           <Link
@@ -88,7 +107,11 @@ export default function DashboardLayout({
             }`}
           >
             <MessageSquare className="h-5 w-5 mr-3" />
-            <span className="hidden md:block">Conversations</span>
+            <span
+              className={`${isConversationsPage ? "hidden" : "hidden md:block"}`}
+            >
+              Conversations
+            </span>
           </Link>
 
           <Link
@@ -100,7 +123,11 @@ export default function DashboardLayout({
             }`}
           >
             <Users className="h-5 w-5 mr-3" />
-            <span className="hidden md:block">Clients</span>
+            <span
+              className={`${isConversationsPage ? "hidden" : "hidden md:block"}`}
+            >
+              Clients
+            </span>
           </Link>
 
           <Link
@@ -112,7 +139,11 @@ export default function DashboardLayout({
             }`}
           >
             <Settings className="h-5 w-5 mr-3" />
-            <span className="hidden md:block">Settings</span>
+            <span
+              className={`${isConversationsPage ? "hidden" : "hidden md:block"}`}
+            >
+              Settings
+            </span>
           </Link>
         </nav>
 
@@ -130,7 +161,9 @@ export default function DashboardLayout({
                     {user?.name ? user.name[0] : "U"}
                   </AvatarFallback>
                 </Avatar>
-                <div className="ml-2 hidden md:block">
+                <div
+                  className={`ml-2 ${isConversationsPage ? "hidden" : "hidden md:block"}`}
+                >
                   <p className="text-sm font-medium">{user?.name || "User"}</p>
                   <p className="text-xs text-slate-500">
                     {user?.email || "user@example.com"}
@@ -140,7 +173,7 @@ export default function DashboardLayout({
               <Button
                 variant="ghost"
                 size="icon"
-                className="hidden md:flex"
+                className={`${isConversationsPage ? "hidden" : "hidden md:flex"}`}
                 onClick={handleLogout}
               >
                 <LogOut className="h-5 w-5" />

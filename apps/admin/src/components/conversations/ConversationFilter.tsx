@@ -1,5 +1,4 @@
 import { Badge } from "@/components/ui/badge";
-import { DateRangePicker } from "@/components/ui/date-range-picker";
 import { SearchInput } from "@/components/ui/search-input";
 import { X } from "lucide-react";
 
@@ -13,8 +12,8 @@ interface ConversationFilterProps {
   onSearchChange: (value: string) => void;
   dateRange: DateRange;
   onDateRangeChange: (range: DateRange) => void;
-  status: "all" | "PENDING" | "RESOLVED";
-  onStatusChange: (status: "all" | "PENDING" | "RESOLVED") => void;
+  status: "all" | "ACTIVE" | "PENDING" | "CLOSED";
+  onStatusChange: (status: "all" | "ACTIVE" | "PENDING" | "CLOSED") => void;
 }
 
 export function ConversationFilter({
@@ -31,7 +30,7 @@ export function ConversationFilter({
   const handleClearFilters = () => {
     onSearchChange("");
     onDateRangeChange({ from: null, to: null });
-    onStatusChange("all");
+    onStatusChange("ACTIVE");
   };
 
   return (
@@ -42,11 +41,6 @@ export function ConversationFilter({
           onChange={onSearchChange}
           placeholder="Search conversations..."
           className="flex-1"
-        />
-        <DateRangePicker
-          value={dateRange}
-          onChange={onDateRangeChange}
-          className="w-full sm:w-auto sm:min-w-[240px]"
         />
       </div>
 
@@ -60,16 +54,23 @@ export function ConversationFilter({
             All
           </Badge>
           <Badge
-            variant={status === "PENDING" ? "default" : "outline"}
+            variant={status === "ACTIVE" ? "default" : "outline"}
             className="cursor-pointer"
-            onClick={() => onStatusChange("PENDING")}
+            onClick={() => onStatusChange("ACTIVE")}
           >
             Active
           </Badge>
           <Badge
-            variant={status === "RESOLVED" ? "default" : "outline"}
+            variant={status === "PENDING" ? "default" : "outline"}
             className="cursor-pointer"
-            onClick={() => onStatusChange("RESOLVED")}
+            onClick={() => onStatusChange("PENDING")}
+          >
+            Pending
+          </Badge>
+          <Badge
+            variant={status === "CLOSED" ? "default" : "outline"}
+            className="cursor-pointer"
+            onClick={() => onStatusChange("CLOSED")}
           >
             Resolved
           </Badge>

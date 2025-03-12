@@ -3,7 +3,7 @@
 import { ConversationNotificationHandler } from "@/components/ConversationNotificationHandler";
 import { ConversationEmptyState } from "@/components/conversations/ConversationEmptyState";
 import { ConversationHeader } from "@/components/conversations/ConversationHeader";
-import { ConversationsList } from "@/components/conversations/ConversationsList";
+import { ConversationList } from "@/components/conversations/ConversationList";
 import { MessageInput } from "@/components/conversations/MessageInput";
 import { MessagesList } from "@/components/conversations/MessagesList";
 import { ResolveConfirmationDialog } from "@/components/conversations/ResolveConfirmationDialog";
@@ -17,7 +17,7 @@ import { useMessageInput } from "@ekonsilio/chat-core";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { MessageSquare } from "lucide-react";
-import { useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -93,6 +93,13 @@ function ConversationsPageContent() {
     return <ErrorState error={error} onRetry={() => fetchConversations()} />;
   }
 
+  // Add these new states for pagination
+  const [hasMore, setHasMore] = useState(true);
+  const loadMore = useCallback(() => {
+    // Implement your pagination logic here
+    // This should be handled by your useConversations hook
+  }, []);
+
   return (
     <div className="flex h-full">
       <LoadingState
@@ -100,13 +107,18 @@ function ConversationsPageContent() {
         loadingText="Loading conversations..."
         className="w-80 border-r"
       >
-        <ConversationsList
+        <ConversationList
           conversations={filteredConversations}
+          isLoading={loading}
+          hasMore={hasMore}
+          loadMore={loadMore}
           selectedConversationId={selectedConversation?.id}
-          searchQuery={searchQuery}
-          searchError={searchError}
-          onSearchChange={setSearchQuery}
-          onSelectConversation={handleSelectConversation}
+          onSelectConversation={(id) => {
+            const conversation = conversations.find((c) => c.id === id);
+            if (conversation) {
+              handleSelectConversation(conversation);
+            }
+          }}
         />
       </LoadingState>
 

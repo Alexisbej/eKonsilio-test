@@ -31,7 +31,7 @@ export const dateRangeSchema = z
     },
   );
 
-export const conversationStatusSchema = z.enum(["all", "PENDING", "RESOLVED"]);
+export const conversationStatusSchema = z.enum(["all", "PENDING", "CLOSED"]);
 
 export const conversationFilterSchema = z.object({
   search: searchSchema,
