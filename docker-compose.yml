@@ -17,34 +17,34 @@ services:
       timeout: 5s
       retries: 5
 
-  backend:
-    build:
-      context: .
-      dockerfile: apps/backend/Dockerfile
-    depends_on:
-      - postgres
-    environment:
-      DATABASE_URL: postgres://ekonsilio:password@localhost:5432/ekonsilio_db
-    ports:
-      - "3001:3001"
+  # backend:
+  #   build:
+  #     context: .
+  #     dockerfile: apps/backend/Dockerfile
+  #   depends_on:
+  #     - postgres
+  #   environment:
+  #     DATABASE_URL: postgres://ekonsilio:password@localhost:5432/ekonsilio_db
+  #   ports:
+  #     - "3001:3001"
 
-  frontend:
-    build:
-      context: .
-      dockerfile: apps/admin/Dockerfile
-    depends_on:
-      - backend
-    ports:
-      - "3000:3000"
+  # frontend:
+  #   build:
+  #     context: .
+  #     dockerfile: apps/admin/Dockerfile
+  #   depends_on:
+  #     - backend
+  #   ports:
+  #     - "3000:3000"
 
-  visitor:
-    build:
-      context: .
-      dockerfile: apps/visitor-chat/Dockerfile
-    depends_on:
-      - backend
-    ports:
-      - "3002:3002"
+  # visitor:
+  #   build:
+  #     context: .
+  #     dockerfile: apps/visitor-chat/Dockerfile
+  #   depends_on:
+  #     - backend
+  #   ports:
+  #     - "3002:3002"
 
 volumes:
   postgres_data:

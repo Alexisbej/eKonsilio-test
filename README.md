@@ -112,6 +112,10 @@ pnpm check-types
 
 ```
 # Start all services in production mode
+docker compose up -d // runs the database
+
+docker exec -it ekonsilio-test-postgres-1 psql -U ekonsilio -d ekonsilio_db -c "INSERT INTO \"Tenant\" (id, name, \"createdAt\", \"updatedAt\") VALUES ('b5f88040-a8bf-4b1e-99c2-1650c4fcbf3f', 'Default Tenant', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP) ON CONFLICT (id) DO NOTHING;" // create a default tenant in db
+
 pnpm build && pnpm start:prod
 ```
 
